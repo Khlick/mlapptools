@@ -139,24 +139,24 @@ classdef (Abstract) mlapptools
                 
                 %}
             else          
-            % Get the outer html: 
-            fullHTML = win.executeJS('document.documentElement.outerHTML'); 
-            % Replace some strings for conversion to work well: 
-            fullHTML = strrep(fullHTML,'%','%%'); 
-            fullHTML = strrep(fullHTML,'><','>\n<'); 
-            % Append the DOCTYPE header and remove quotes: 
-            fullHTML = sprintf(['<!DOCTYPE HTML>\n' fullHTML(2:end-1)]);                  
-            %% Optional things to do with the output:
-            % Display as web page:
-            %{
-                web(['text://' fullHTML]);
-            %}
-            % Save as file:
-            %{
-               fid = fopen('uifig_raw.html','w');
-               fprintf(fid,'%s',fullHTML);
-               fclose(fid);
-            %}        
+                % Get the outer html: 
+                fullHTML = win.executeJS('document.documentElement.outerHTML'); 
+                % Replace some strings for conversion to work well: 
+                fullHTML = strrep(fullHTML,'%','%%'); 
+                fullHTML = strrep(fullHTML,'><','>\n<'); 
+                % Append the DOCTYPE header and remove quotes: 
+                fullHTML = sprintf(['<!DOCTYPE HTML>\n' fullHTML(2:end-1)]);                  
+                %% Optional things to do with the output:
+                % Display as web page:
+                %{
+                    web(['text://' fullHTML]);
+                %}
+                % Save as file:
+                %{
+                   fid = fopen('uifig_raw.html','w');
+                   fprintf(fid,'%s',fullHTML);
+                   fclose(fid);
+                %}        
             end
         end % getHTML    
 
@@ -189,7 +189,7 @@ classdef (Abstract) mlapptools
                 warnState = mlapptools.toggleWarnings('off');
                 widgetID = WidgetID('data-test-id', char(struct(uiElement).NodeId));
                 warning(warnState); % Restore warning state
-              case {'uipanel','figure','uitabgroup','uitab'}
+              case {'uipanel','figure','uitabgroup','uitab','uitoggleswitch'}
                 widgetID = WidgetID('data-tag', mlapptools.getDataTag(uiElement));
               otherwise % default:              
                 widgetID = mlapptools.getWidgetID(win, mlapptools.getDataTag(uiElement));
@@ -406,6 +406,8 @@ classdef (Abstract) mlapptools
                 warning('Certificate import cancelled by user!');
                 wasImported = false;
               end
+            else
+              wasImported = true;
             end
             %% Report result
             tf = isAccepted || wasImported;
