@@ -29,8 +29,9 @@ classdef (Abstract) mlapptools
     DEF_ID_ATTRIBUTE = 'id';
   end
   
+  %% Public Methods:
   methods (Access = public, Static = true)
-    
+    %% aboutJSLibs
     function [jsLibVersions] = aboutJSLibs()
       % A method for getting version info about some JS libararies visible to MATLAB.
       % This includes the Dojo Toolkit and ReactJS.
@@ -71,7 +72,7 @@ classdef (Abstract) mlapptools
       end
       jsLibVersions = struct('dojo', dojoVersion, 'react_js', reactVersion);
     end % aboutJSLibs
-    
+    %% addClasses
     function addClasses(hUIElement, cssClasses)
       % A method for adding CSS classes to DOM nodes.
       
@@ -96,7 +97,7 @@ classdef (Abstract) mlapptools
       end
       
     end % addClasses
-    
+    %% addToHead
     function addToHead(hWin, nodeText)
       % A method for adding nodes (<style>, <script>, ... ) to the HTML <head> section.
       
@@ -114,7 +115,7 @@ classdef (Abstract) mlapptools
       % Inject the nodeText:
       hWin.executeJS(['document.head.innerHTML += ', nodeText]);      
     end % addToHead
-    
+    %% fontColor
     function fontColor(hUIElement, color)
       % A method for manipulating text color.
       color = mlapptools.validateCSScolor(color);
@@ -123,7 +124,7 @@ classdef (Abstract) mlapptools
       
       mlapptools.setStyle(hWin, 'color', color, widgetID);
     end % fontColor
-    
+    %% fontWeight
     function fontWeight(hUIElement, weight)
       % A method for manipulating font weight, which controls how thick or
       % thin characters in text should be displayed.
@@ -133,7 +134,7 @@ classdef (Abstract) mlapptools
       
       mlapptools.setStyle(hWin, 'font-weight', weight, widgetID);
     end % fontWeight
-    
+    %% getChildNodeIDs
     function [childIDs] = getChildNodeIDs(hWin, widgetID)
       % A method for getting all children nodes (commonly <div>) of a specified node.
       % Returns a vector WidgetID.
@@ -148,20 +149,20 @@ classdef (Abstract) mlapptools
       % "Clear" the temporary JS variable
       hWin.executeJS('W = undefined');
     end % getChildNodeIDs
-    
+    %% getHTML
     function [fullHTML] = getHTML(hFigOrWin)
       % A method for dumping the HTML code of a uifigure.
       % Intended for R2017b (and onward?) where the CEF url cannot be simply opened in
       % an external browser.
       % Mostly irrelevant for UIFigures as of the introduction of mlapptools.unlockUIFig(...),
       % but can be useful for other non-uifigure webwindows.
-      %% Obtain webwindow handle:
+      %%% Obtain webwindow handle:
       if isa(hFigOrWin,'matlab.ui.Figure')
         hWin = mlapptools.getWebWindow(hFigOrWin);
         indepWW = false;
       else
         hWin = hFigOrWin; % rename the handle
-        %% Attempt to determine if this is an "independent" webwindow:
+        %%% Attempt to determine if this is an "independent" webwindow:
         hF = mlapptools.figFromWebwindow(hWin);
         if isempty(hF)
           indepWW = true;
@@ -169,12 +170,12 @@ classdef (Abstract) mlapptools
           indepWW = false;
         end
       end
-      %% Get HTML according to webwindow type:
+      %%% Get HTML according to webwindow type:
       if indepWW
         [~,hWB] = web(hWin.URL, '-new');
         fullHTML = hWB.getHtmlText();
         close(hWB);
-        %% TODO: Try to fix css paths:
+        %%% TODO: Try to fix css paths:
         % See: https://stackoverflow.com/q/50944935/
         %{
         % Get all <link> elements:
@@ -192,7 +193,7 @@ classdef (Abstract) mlapptools
         fullHTML = strrep(fullHTML,'><','>\n<');
         % Append the DOCTYPE header and remove quotes:
         fullHTML = sprintf(['<!DOCTYPE HTML>\n' fullHTML(2:end-1)]);
-        %% Optional things to do with the output:
+        %%% Optional things to do with the output:
         % Display as web page:
         %{
           web(['text://' fullHTML]);
@@ -205,7 +206,7 @@ classdef (Abstract) mlapptools
         %}
       end
     end % getHTML
-    
+    %% getParentNodeID
     function [parentID] = getParentNodeID(hWin, widgetID)
       % A method for getting the parent node (commonly <div>) of a specified node.
       % Returns a scalar WidgetID.
@@ -217,14 +218,14 @@ classdef (Abstract) mlapptools
       % "Clear" the temporary JS variable
       hWin.executeJS('W = undefined');
     end % getParentNodeID
-    
+    %% getTableCellID
     function [widgetIDs] = getTableCellID(hUITable, r, c)
       % This method returns one or more ID objects, corresponding to specific cells in a
       % uitable, as defined by the cells' row and column indices.
-      %% Constants:
+      %%% Constants:
       TABLE_CLASS_NAME = 'matlab.ui.control.Table';
       CELL_ID_PREFIX = {'variableeditor_views_editors_UITableEditor_'};
-      %% Input tests:
+      %%% Input tests:
       assert( isa(hUITable, TABLE_CLASS_NAME) && ishandle(hUITable),...
               'Invalid uitable handle!');
       nR = numel(r); nC = numel(c);
@@ -232,7 +233,7 @@ classdef (Abstract) mlapptools
       sz = size(hUITable.Data);
       assert( all(r <= sz(1)), 'One or more requested rows are out-of-bounds!');
       assert( all(c <= sz(2)), 'One or more requested columns are out-of-bounds!');
-      %% Computing the offset
+      %%% Computing the offset
       % If there's more than one uitable in the figure, IDs are assigned
       % consecutively. For example, in the case of a 3x3 and 4x4 arrays,
       % where the smaller table was created first, IDs are assigned as follows:
@@ -266,7 +267,7 @@ classdef (Abstract) mlapptools
         widgetIDs(indI) = WidgetID(mlapptools.DEF_ID_ATTRIBUTE, textFieldID(2:end-1) );
       end
     end % getTableCellID
-    
+    %% getWebElements
     function [hWin, widgetID] = getWebElements(hUIElement)
       % A method for obtaining the webwindow handle and the widget ID corresponding
       % to the provided ui control (aka web component).
@@ -286,7 +287,10 @@ classdef (Abstract) mlapptools
           warnState = mlapptools.toggleWarnings('off');
           widgetID = WidgetID('data-test-id', char(struct(hUIElement).NodeId));
           warning(warnState); % Restore warning state
-        case {'uipanel','figure','uitabgroup','uitab'}
+        case { ...
+            'uipanel', 'figure', 'uitabgroup', 'uitab', 'uibutton', ...
+            'uiswitch', 'uitoggleswitch', 'uirockerswitch' ...
+            }
           widgetID = WidgetID('data-tag', mlapptools.getDataTag(hUIElement));
         case 'uitable'
           TAB_PREFIX = "mgg_";
@@ -308,7 +312,7 @@ classdef (Abstract) mlapptools
           widgetID = mlapptools.getWidgetID(hWin, mlapptools.getDataTag(hUIElement));
       end
     end % getWebElements
-    
+    %% getWebWindow
     function [hWin] = getWebWindow(hUIElement)
       warnState = mlapptools.toggleWarnings('off');
       % Make sure we got a valid handle
@@ -331,7 +335,7 @@ classdef (Abstract) mlapptools
       warning(warnState); % Restore warning state
       
     end % getWebWindow
-    
+    %% getWidgetInfo
     function [nfo] = getWidgetInfo(hWin, widgetID, verboseFlag)
       % A method for gathering information about a specific dijit widget, if its
       % HTML div id is known.
@@ -341,14 +345,14 @@ classdef (Abstract) mlapptools
         nfo = struct([]);
         return
       end
-      %% Handling required positional inputs:
+      %%% Handling required positional inputs:
       assert(nargin >= 2,'mlapptools:getWidgetInfo:insufficientInputs',...
         'getWidgetInfo must be called with at least 2 inputs.');
-      %% Handling optional inputs:
+      %%% Handling optional inputs:
       if nargin < 3 || isempty(verboseFlag)
         verboseFlag = false;
       end
-      %% Querying dijit
+      %%% Querying dijit
       hWin.executeJS(['var W; require(["dijit/registry"], '...
         'function(registry){W = registry.byId("' widgetID.ID_val '");}); W = [W];']);
       % Decoding
@@ -367,7 +371,7 @@ classdef (Abstract) mlapptools
       % "Clear" the temporary JS variable
       hWin.executeJS('W = undefined');
     end % getWidgetInfo
-    
+    %% getWidgetList
     function varargout = getWidgetList(hUIFig, verboseFlag)
       % A method for listing all dijit widgets in a uifigure.
       warnState = mlapptools.toggleWarnings('off');
@@ -380,7 +384,7 @@ classdef (Abstract) mlapptools
       if nargin < 2 || isempty(verboseFlag)
         verboseFlag = false;
       end
-      %% Process uifigure:
+      %%% Process uifigure:
       hWin = mlapptools.getWebWindow(hUIFig);
       % Extract widgets from dijit registry:
       hWin.executeJS(['var W; require(["dijit/registry"], '...
@@ -388,14 +392,14 @@ classdef (Abstract) mlapptools
       widgets = mlapptools.decodeDijitRegistryResult(hWin, verboseFlag);
       % "Clear" the temporary JS variable
       hWin.executeJS('W = undefined');
-      %% Assign outputs:
+      %%% Assign outputs:
       varargout{1} = widgets;
       if nargout == 2
         % Convert to a single table:
         varargout{2} = struct2table(mlapptools.unifyStructs(widgets));
       end % getWidgetList
     end
-    
+    %% setStyle
     function varargout = setStyle(varargin)
       % A method providing an interface for modifying style attributes of uicontrols.
       %
@@ -447,12 +451,12 @@ classdef (Abstract) mlapptools
         varargout{1} = widgetID;
       end
     end % setStyle
-    
+    %% setTimeout
     function setTimeout(hUIFig, newTimeoutInSec)
       % Sets a custom timeout for dojo queries, specified in [s].
       setappdata(hUIFig, mlapptools.TAG_TIMEOUT, newTimeoutInSec);
     end
-    
+    %% textAlign
     function textAlign(hUIElement, alignment)
       % A method for manipulating text alignment.
       alignment = lower(alignment);
@@ -462,7 +466,7 @@ classdef (Abstract) mlapptools
       
       mlapptools.setStyle(hWin, 'textAlign', alignment, widgetID);
     end % textAlign
-    
+    %% unlockUIFig
     function unlockUIFig(hUIFig)
       % This method allows the uifigure to be opened in an external browser,
       % as was possible before R2017b.
@@ -487,7 +491,7 @@ classdef (Abstract) mlapptools
         SUCCESS_CODE = 0;
         CL = connector.getCertificateLocation(); % certificate location;
         if isempty(CL), CL = fullfile(prefdir, 'thisMatlab.pem'); end
-        %% Test if certificate is already accepted:
+        %%% Test if certificate is already accepted:
         switch true
           case ispc
             [s,c] = system('certutil -verifystore -user "Root" localhost');
@@ -501,7 +505,7 @@ classdef (Abstract) mlapptools
         end
         isAccepted = s == SUCCESS_CODE;
         
-        %% Try to import certificate:
+        %%% Try to import certificate:
         if isAccepted
           wasImported = false;
         else
@@ -551,28 +555,28 @@ classdef (Abstract) mlapptools
         end
       end % checkCert
     end % unlockUIFig
-    
+    %% waitForFigureReady
     function hWin = waitForFigureReady(hUIFig)
       % This blocking method waits until a UIFigure and its widgets have fully loaded.
-      %% Make sure that the handle is valid:
+      %%% Make sure that the handle is valid:
       assert(mlapptools.isUIFigure(hUIFig),...
         'mlapptools:getWebWindow:NotUIFigure',...
         'The provided window handle is not of a UIFigure.');
       assert(strcmp(hUIFig.Visible,'on'),...
         'mlapptools:getWebWindow:FigureNotVisible',...
         'Invisible figures are not supported.');
-      %% Wait for the figure to appear:
+      %%% Wait for the figure to appear:
       mlapptools.waitTillFigureLoaded(hUIFig);
-      %% Make sure that Dojo is ready:
+      %%% Make sure that Dojo is ready:
       % Get a handle to the webwindow
       hWin = mlapptools.getWebWindow(hUIFig);
       mlapptools.waitTillWebwindowLoaded(hWin, hUIFig);
     end % waitForFigureReady
     
   end % Public Static Methods
-  
+%% Private methods  
   methods (Static = true, Access = private)
-    
+    %%checkJavascriptSyntaxError
     function ME = checkJavascriptSyntaxError(ME, styleSetStr)
       if (strcmp(ME.identifier,'cefclient:webwindow:jserror'))
         c = strfind(ME.message,'Uncaught SyntaxError:');
@@ -584,11 +588,11 @@ classdef (Abstract) mlapptools
         end
       end
     end % checkJavascriptSyntaxError
-    
+    %% decodeDijitRegistryResult
     function widgets = decodeDijitRegistryResult(hWin, verboseFlag)
       % As this method relies heavily on jsondecode, it is only supported on R >= 2016b
       assert(strcmp('true', hWin.executeJS(...
-        'this.hasOwnProperty("W") && W !== undefined && W instanceof Array && W.length > 0')),...
+        'this.hasOwnProperty("W") && typeof W !== "undefined" && W instanceof Array && W.length > 0')),...
         'mlapptools:decodeDijitRegistryResult:noSuchWidget',...
         'The dijit registry doesn''t contain the specified widgetID.');
       
@@ -620,7 +624,7 @@ classdef (Abstract) mlapptools
         end
       end
     end % decodeDijitRegistryResult
-    
+    %% emptyStructWithFields
     function eStruct = emptyStructWithFields(fields)
       % A convenience method for creating an empty scalar struct with specific field
       % names.
@@ -631,7 +635,7 @@ classdef (Abstract) mlapptools
       eStruct = struct(tmp{:});
       
     end % emptyStructWithFields
-    
+    %% establishIdentities
     function [widgetID] = establishIdentities(hWin) % throws AssertionError
       % A method for generating WidgetID objects from a list of DOM nodes.
       assert(strcmp('true', hWin.executeJS([...
@@ -642,9 +646,9 @@ classdef (Abstract) mlapptools
       
       attrs = {'widgetid', 'id', 'data-tag', 'data-reactid'};
       nA = numel(attrs);
-      %% Preallocate output:
+      %%% Preallocate output:
       widgetID(hWin.executeJS('W.length') - '0', 1) = WidgetID; % "str2double"
-      %%
+      %%%
       for indW = 1:numel(widgetID)
         for indA = 1:nA
           % Get the attribute value:
@@ -662,13 +666,13 @@ classdef (Abstract) mlapptools
         end
       end
     end % establishIdentity
-    
+    %% getDataTag
     function [dataTag] = getDataTag(hUIElement)
       warnState = mlapptools.toggleWarnings('off');
       dataTag = char( struct(hUIElement).Controller.ProxyView.PeerNode.getId() );
       warning(warnState);
     end % getDataTag
-    
+    %% figFromWebWindow
     function hFig = figFromWebwindow(hWin)
       % Using this method is discouraged as it's relatively computation-intensive.
       % Since the figure handle is not a property of the webwindow or its children
@@ -688,7 +692,7 @@ classdef (Abstract) mlapptools
       warning(warnState); % Restore warning state
       hFig = hFigs(hWin == ww);
     end % figFromWebwindow
-    
+    %% getWidgetID
     function [widgetID] = getWidgetID(hWin, dataTag)
       % This method returns an object containing some uniquely-identifying information
       % about a DOM node.
@@ -702,7 +706,7 @@ classdef (Abstract) mlapptools
         % widgetID = mlapptools.getWidgetIDFromDijit(hWin, data_tag);
       end
     end % getWidgetID
-    
+    %% getWidgetIDFromDijit
     function widgetID = getWidgetIDFromDijit(hWin, dataTag)
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% EXPERIMENTAL METHOD!!!
       hWin.executeJS(['var W; require(["dijit/registry"], '...
@@ -736,7 +740,7 @@ classdef (Abstract) mlapptools
         end
       end
     end % getWidgetIDFromDijit
-    
+    %% getTimeout
     function to = getTimeout(hUIFig)
       if isempty(hUIFig) || ~isa(hUIFig, 'matlab.ui.Figure')
         to = mlapptools.QUERY_TIMEOUT;
@@ -745,13 +749,13 @@ classdef (Abstract) mlapptools
         if isempty(to), to = mlapptools.QUERY_TIMEOUT; end
       end
     end % getTimeout
-    
+    %% isUIFigure
     function tf = isUIFigure(hFigList)
       tf = arrayfun(@(x)isa(x,'matlab.ui.Figure') && ...
         isstruct(struct(x).ControllerInfo), hFigList);
       % See also: matlab.ui.internal.isUIFigure()
     end % isUIFigure
-    
+    %% toggleWarnings
     function oldState = toggleWarnings(toggleStr)
       OJF = 'MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame';
       SOO = 'MATLAB:structOnObject';
@@ -769,7 +773,7 @@ classdef (Abstract) mlapptools
           % Do nothing
       end
     end % toggleWarnings
-    
+    %% unifyStructs
     function uStruct = unifyStructs(cellOfStructs)
       % A method for merging structs having *some* overlapping field names.
       
@@ -784,7 +788,7 @@ classdef (Abstract) mlapptools
         end
       end
     end % unifyStructs
-    
+    %% validateAlignmentStr
     function validateAlignmentStr(alignment)
       if ~ischar(alignment)
         msgID = 'mlapptools:alignstring:InvalidInputIype';
@@ -798,11 +802,11 @@ classdef (Abstract) mlapptools
         error(msgID, 'Invalid string alignment specified: ''%s''', alignment);
       end
     end % validateAlignmentStr
-    
+    %% validateCSScolor
     function [color] = validateCSScolor(color)
       % TODO
     end % validateCSScolor
-    
+    %% validateFontWeight
     function [weight] = validateFontWeight(weight)
       if ischar(weight)
         weight = lower(weight);
@@ -826,7 +830,7 @@ classdef (Abstract) mlapptools
         error(msgID, 'Invalid font weight specified: ''%s''', weight);
       end
     end % validateFontWeight
-    
+    %% waitTillFigureLoaded
     function waitTillFigureLoaded(hUIFig)
       % A blocking method that ensures a UIFigure has fully loaded.
       warnState = mlapptools.toggleWarnings('off');
@@ -846,7 +850,7 @@ classdef (Abstract) mlapptools
       end
       warning(warnState);
     end % waitTillFigureLoaded
-    
+    %% waitTillWebWindowLoaded
     function waitTillWebwindowLoaded(hWin, hUIFig)
       % A blocking method that ensures a certain webwindow has fully loaded.
             try    
@@ -874,7 +878,7 @@ classdef (Abstract) mlapptools
         hWin.executeJS('require(["dojo/ready"], function(ready){});');
       end
     end % waitTillWebwindowLoaded
-    
+    %% htmlRootPath
     function htmlRootPath = getFullPathFromWW(hWin)
       % Get a local href value, e.g. from an included main.css
       href = hWin.executeJS('document.body.getElementsByTagName("link")[0].href');
