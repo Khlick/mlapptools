@@ -7,7 +7,7 @@ classdef (Abstract) mlapptools
   %
   % aboutJSLibs    - Return version information about certain JS libraries.
   % addClasses     - Add specified CSS classes to one or more DOM nodes.
-  % addCssToHead   - Inject inline CSS into the <head> section of the figure's HTML.
+  % addToHead      - Inject inline CSS/JS into the <head> section of the figure's HTML.
   % fontColor      - Modify font color.
   % fontWeight     - Modify font weight.
   % getHTML        - Return the full HTML code of a uifigure.
@@ -104,11 +104,11 @@ classdef (Abstract) mlapptools
       if isfile(nodeText)
         warning(['Files are not supported at this time.'...
           ' Please provide a "stringified" input instead.'...
-          '\nInput can be "<style ...></style>" or "<script ...></script>".'],[]);
+          '\nInput can be "<style>...</style>" or "<script>...</script>".'],[]);
       elseif ~isempty(regexpi(nodeText,'http(s)?://'))
         warning(['Remote files are not supported at this time.',...
           ' Please provide a "stringified" input instead.'...
-          '\nInput can be "<style ...></style>" or "<script ...></script>".'],[]);
+          '\nInput can be "<style>...</style>" or "<script>...</script>".'],[]);
       end
       
       % Inject the nodeText:
@@ -286,10 +286,15 @@ classdef (Abstract) mlapptools
           warnState = mlapptools.toggleWarnings('off');
           widgetID = WidgetID('data-test-id', char(struct(hUIElement).NodeId));
           warning(warnState); % Restore warning state
+<<<<<<< HEAD
         case { ...
             'uipanel', 'figure', 'uitabgroup', 'uitab', 'uibutton', ...
             'uiswitch', 'uitoggleswitch', 'uirockerswitch' ...
             }
+=======
+        case {'uipanel', 'figure', 'uitabgroup', 'uitab', ...
+          'uiswitch', 'uitoggleswitch', 'uirockerswitch'}
+>>>>>>> origin/develop
           widgetID = WidgetID('data-tag', mlapptools.getDataTag(hUIElement));
         case 'uitable'
           TAB_PREFIX = "mgg_";
@@ -307,6 +312,20 @@ classdef (Abstract) mlapptools
           [~,tmp] = mlapptools.getWidgetList( ancestor(hUIElement,'figure') );
           widgetID = arrayfun(@(x)WidgetID(mlapptools.DEF_ID_ATTRIBUTE, x), ...
                               string(tmp.id(contains(tmp.id, TAB_PREFIX))));
+        case 'axes'
+          switch subsref(ver('matlab'), substruct('.','Version'))
+            case {'9.6'} % R2019a
+              descendType = 'img';
+            otherwise  % R2016a-R2018b
+              descendType = 'canvas';
+              % This canvas has a context of type "webgl".
+              % See also: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API
+              warning(['UIAxes object detected. Returning the innermost <canvas> element. '...
+                   'Be advised that mlapptools cannot modify this element, which '...
+                   'instead requires using WebGL commands via `hWin.executeJS(...)`.']); 
+          end         
+          widgetID = mlapptools.getDecendentOfType( ...
+            hWin, mlapptools.getDataTag(hUIElement), descendType);
         otherwise % default:
           widgetID = mlapptools.getWidgetID(hWin, mlapptools.getDataTag(hUIElement));
       end
@@ -672,6 +691,26 @@ classdef (Abstract) mlapptools
       warning(warnState);
     end % getDataTag
     
+    function [widgetID] = getDecendentOfType(hWin, ancestorDataTag, descendentType)
+      % This method returns a node's first descendent of a specified <type>.
+      % See also: 
+      % https://dojotoolkit.org/reference-guide/1.10/dojo/query.html#standard-css2-selectors      
+      widgetquerystr = sprintf(...
+        'dojo.getAttr(dojo.query("[data-tag^=''%s''] %s")[0], "%s")', ...
+        ancestorDataTag, descendentType, mlapptools.DEF_ID_ATTRIBUTE);
+      try % should work for most UI objects
+        ID = hWin.executeJS(widgetquerystr);
+        if ~strcmpi(ID,'null')
+          widgetID = WidgetID(mlapptools.DEF_ID_ATTRIBUTE, ID(2:end-1));
+          return
+        end
+      catch
+        warning(['Error encountered while obtaining a descendent of ', ancestorDataTag]);
+      end      
+       % If the JS command failed, or no descendent found, return an empty WidgetID object.
+      widgetID = WidgetID();
+    end % getDecendentOfType
+    
     function hFig = figFromWebwindow(hWin)
       % Using this method is discouraged as it's relatively computation-intensive.
       % Since the figure handle is not a property of the webwindow or its children
@@ -769,7 +808,7 @@ classdef (Abstract) mlapptools
           warning('off',OJF);
           warning('off',SOO);
         otherwise
-          % Do nothing
+          warning(['Unrecognized option "' toggleStr '". Please use either "on" or "off".']);
       end
     end % toggleWarnings
     
