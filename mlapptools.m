@@ -24,7 +24,7 @@ classdef (Abstract) mlapptools
   % See README.md for detailed documentation and examples.
   
   properties (Access = private, Constant = true)
-    QUERY_TIMEOUT = 5;  % Dojo query timeout period, seconds
+    QUERY_TIMEOUT = 20;  % Dojo query timeout period, seconds
     TAG_TIMEOUT = 'QUERY_TIMEOUT';
     DEF_ID_ATTRIBUTE = 'id';
   end
@@ -286,7 +286,10 @@ classdef (Abstract) mlapptools
           warnState = mlapptools.toggleWarnings('off');
           widgetID = WidgetID('data-test-id', char(struct(hUIElement).NodeId));
           warning(warnState); % Restore warning state
-        case {'uipanel','figure','uitabgroup','uitab'}
+        case { ...
+            'uipanel', 'figure', 'uitabgroup', 'uitab', 'uibutton', ...
+            'uiswitch', 'uitoggleswitch', 'uirockerswitch' ...
+            }
           widgetID = WidgetID('data-tag', mlapptools.getDataTag(hUIElement));
         case 'uitable'
           TAB_PREFIX = "mgg_";
