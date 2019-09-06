@@ -286,15 +286,10 @@ classdef (Abstract) mlapptools
           warnState = mlapptools.toggleWarnings('off');
           widgetID = WidgetID('data-test-id', char(struct(hUIElement).NodeId));
           warning(warnState); % Restore warning state
-<<<<<<< HEAD
         case { ...
             'uipanel', 'figure', 'uitabgroup', 'uitab', 'uibutton', ...
             'uiswitch', 'uitoggleswitch', 'uirockerswitch' ...
             }
-=======
-        case {'uipanel', 'figure', 'uitabgroup', 'uitab', ...
-          'uiswitch', 'uitoggleswitch', 'uirockerswitch'}
->>>>>>> origin/develop
           widgetID = WidgetID('data-tag', mlapptools.getDataTag(hUIElement));
         case 'uitable'
           TAB_PREFIX = "mgg_";
